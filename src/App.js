@@ -1,12 +1,12 @@
 import React from 'react';
 import './App.css';
-import Draggable from './Draggable';
+// import Draggable from './Draggable';
 import ApolloClient from "apollo-boost";
 import { ApolloProvider } from "react-apollo";
-// import Tasks from "./Tasks";
-import ToDoList from "./ToDoList";
-import InProgressList from "./InProgressList";
-import DoneList from "./DoneList";
+import Tasks from "./Tasks";
+// import ToDoList from "./ToDoList";
+// import InProgressList from "./InProgressList";
+// import DoneList from "./DoneList";
 import gql from "graphql-tag";
 import { Mutation } from "react-apollo";
 import Select from 'react-select';
@@ -25,9 +25,20 @@ class App extends React.Component {
   statuses = [
     {value: 0, label: 'To Do'},
     {value: 1, label: 'In Progress'},
-    {value: 2, label: 'Done'}
+    {value: 2, label: 'Done'},
+    {value: 3, label: 'Delete'}
   ];
   selectedStatus = 0;
+  getTasks = (status) => gql`
+      {
+        tasksByStatus(status: ${status}) {
+          id
+          title
+          description
+          status
+        }
+      }
+    `
 
   render() {
     return (
@@ -35,15 +46,15 @@ class App extends React.Component {
         <div className="taskWrapper">
           <div className="toDo">
             <div>To Do</div>
-            <ToDoList selectTask={(task) => {this.setState({selectedTask: task})}}></ToDoList>
+            <Tasks status={0} selectTask={(task) => { this.setState({ selectedTask: task }) }}/>
           </div>
           <div className="inProgress">
             <div>In Progress</div>
-            <InProgressList></InProgressList>
+            <Tasks status={1} selectTask={(task) => { this.setState({ selectedTask: task }) }} />
           </div>
           <div className="done">
             <div>Done</div>
-            <DoneList></DoneList>
+            <Tasks status={2} selectTask={(task) => { this.setState({ selectedTask: task }) }} />
           </div>
         </div>
         <div className="addIcon" onClick={() => this.setState({ openAddModal:true})}>+</div>
@@ -65,9 +76,12 @@ class App extends React.Component {
                   }
                 }
                 `}>
-                  {(addTask, {data}) => (
+                  {(addTask, {data}) => (     
                     <button onClick={() => {
-                      addTask({ variables: { title: this.state.title, description: this.state.description } });
+                      addTask({ 
+                        variables: { title: this.state.title, description: this.state.description },
+                        refetchQueries: [{ query: this.getTasks(0) }]
+                       });
                       this.setState({ openAddModal: false })}}>
                       Add
                     </button>)
@@ -95,11 +109,15 @@ class App extends React.Component {
                 `}>
                   {(updateStatus, { data }) => (
                     <Select
-                      value={this.statuses.find(status => status.value == this.state.selectedTask.status)}
+                      value={this.statuses.find(status => status.value === this.state.selectedTask.status)}
                       onChange={(status) => {
                         let task = this.state.selectedTask;
+                        const oldStatus = task.status;
+                        const newStatus = status.value;
                         task.status = status.value;
-                        updateStatus({ variables: { id: task.id, status: task.status } });
+                        updateStatus(
+                          { variables: { id: task.id, status: task.status },
+                            refetchQueries: [{ query: this.getTasks(oldStatus) }, { query: this.getTasks(newStatus) }]});
                         this.setState({ selectedTask: null });
                       }}
                       options={this.statuses}

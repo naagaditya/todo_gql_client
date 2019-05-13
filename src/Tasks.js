@@ -9,7 +9,7 @@ class Tasks extends React.Component {
     <Query
       query={gql`
       {
-        tasks {
+        tasksByStatus(status: ${this.props.status}) {
           id
           title
           description
@@ -24,8 +24,8 @@ class Tasks extends React.Component {
           return <Draggable updateChildren={() => { }}>
             
             {
-              data.tasks.map(task =>
-              <div draggable key={task.id} className="card">
+              data.tasksByStatus.map(task =>
+                <div draggable key={task.id} className="card" onClick={() => this.props.selectTask(task)}>
                   {task.title}
               </div>)
             }
