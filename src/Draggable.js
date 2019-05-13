@@ -118,7 +118,7 @@ class Draggable extends React.Component {
       const dragElement = this.refs.draggable.children[this.dragElementIndex];
       this.refs.draggable.scrollTop = this.refs.draggable.scrollTop + scrollHeight;
       dragElement.style.transform =
-        `translate(0, ${y - this.touchY + this.refs.draggable.scrollTop}px)`;
+        `translate(${x - this.touchX}px, ${y - this.touchY + this.refs.draggable.scrollTop}px)`;
     }
     else {
       clearTimeout(this.pressTimer);
@@ -213,7 +213,7 @@ class Draggable extends React.Component {
         onDropCapture: this.handleDropCapture
       }));
     return (
-      <div
+      <div className={this.props.className}
         style={{ ...this.props.style, overflow: 'scroll', maxWidth: '100vw', scrollBehavoiur: 'smooth' }}
         ref="draggable">
         {children}
